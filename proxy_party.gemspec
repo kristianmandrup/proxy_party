@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{proxy_party}
-  s.version = "0.1.0"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Kristian Mandrup"]
-  s.date = %q{2010-06-30}
+  s.date = %q{2011-02-13}
   s.description = %q{Method missing proxy pattern}
   s.email = %q{kmandrup@gmail.com}
   s.extra_rdoc_files = [
@@ -24,9 +24,6 @@ Gem::Specification.new do |s|
      "Rakefile",
      "VERSION",
      "lib/proxy_party.rb",
-     "spec/proxy_party_spec.rb",
-     "spec/spec.opts",
-     "spec/spec_helper.rb"
   ]
   s.homepage = %q{http://github.com/kristianmandrup/proxy_party}
   s.rdoc_options = ["--charset=UTF-8"]
