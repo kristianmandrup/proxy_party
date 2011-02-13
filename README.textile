@@ -1,0 +1,105 @@
+h1. Proxy Party
+
+Greatly facilitates adding proxies through the proxy method_missing pattern. 
+Can now also dynamically add proxy methods and use other amazing meta strategies!
+
+h2. Install
+
+@$ gem install party_proxy@
+
+h2. Use
+
+@require 'party_proxy'@
+
+h2. Usage
+
+<pre>
+  class State
+    attr_accessor :name
+
+    def initialize(name)
+      @name = name    
+    end  
+  end  
+
+  class Info
+    attr_accessor :text
+
+    def initialize(text)
+      @text = text    
+    end  
+  end  
+
+  module Party 
+    class Subject
+      # proxy state and info objects to make their methods 
+      # directly accessible from subject objects
+      proxy :state, :info
+
+      def initialize(name)
+        @state = State.new name
+        @info = Info.new 'hello'      
+      end
+    end
+  end   
+</pre>
+
+<pre>
+  describe Party::Proxy do
+    describe '#proxy' do
+      it "proxies state and info so it can call name directly on subject" do
+        subject = Party::Subject.new 'kristian'
+        subject.name.should == 'kristian'
+      end
+    end
+
+    describe '#proxy_for' do
+      it "proxies speak_it! on mic" do
+        subject = Party::Subject.new 'kristian'
+        subject.mic = Mic.new 'hello'
+        Party::Subject.proxy_for :mic, :speak_it! 
+
+        subject.proxy_for :mic, :speak_it!
+
+        subject.speak_it!.should == 'hello'
+      end
+    end
+
+    describe '#proxy_accessor_for' do  
+      it "proxies speak accessor methods on mic" do
+        subject = Party::Subject.new 'kristian'
+        subject.mic = Mic.new 'hello'
+        subject.proxy_accessors_for :mic, :speak
+        subject.speak = 'do it!'
+        subject.speak.should == 'do it!'
+      end 
+    end
+
+    describe '#named_proxies' do  
+      it "proxies select :mic and :state methods" do
+        subject = Party::Subject.new 'kristian'
+        subject.mic = Mic.new 'hello'
+        subject.named_proxies :mic => :speak, :state => :name
+        subject.speak = 'do it!'
+        subject.speak.should == 'do it!'
+
+        subject.name = 'kris'
+        subject.name.should == 'kris'
+      end 
+    end
+  end    
+</pre>
+
+h2. Note on Patches/Pull Requests
+ 
+* Fork the project.
+* Make your feature addition or bug fix.
+* Add tests for it. This is important so I don't break it in a
+  future version unintentionally.
+* Commit, do not mess with rakefile, version, or history.
+  (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
+* Send me a pull request. Bonus points for topic branches.
+
+h2. Copyright
+
+Copyright (c) 2010 Kristian Mandrup. See LICENSE for details.
