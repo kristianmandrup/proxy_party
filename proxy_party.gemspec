@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
     ".document",
      ".gitignore",
      "LICENSE",
-     "README.markdown",
+     "README.textile",
      "Rakefile",
      "VERSION",
      "lib/proxy_party.rb",
