@@ -43,7 +43,27 @@ module Party
   end
 end
 
+module PartyModule
+  party_proxy
+end
+
+class PartyClass
+  party_proxy
+end
+
+
+
 describe Party::Proxy do
+  describe '#party_proxy' do
+    it "Should add party proxy to Module" do
+      PartyModule.methods.grep(/proxy_for/).should_not be_empty
+    end
+
+    it "Should add party proxy to Class" do
+      PartyClass.methods.grep(/proxy_for/).should_not be_empty
+    end
+  end
+  
   describe '#proxy' do
     it "proxies state and info so it can call name directly on subject" do
       subject = Party::Subject.new 'kristian'

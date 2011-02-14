@@ -3,8 +3,7 @@ require 'sugar-high/kind_of'
 require 'sugar-high/arguments'
 
 module Party
-  module Proxy  
-
+  module Proxy
     class Factory
       
       def initialize klass
@@ -126,7 +125,11 @@ module Party
   end
 end
 
-class Class
+class Module
+  def party_proxy
+    include Party::Proxy    
+  end
+  
   def named_proxies hash
     raise ArgumentError, "Argument must be a hash" if !hash.kind_of? Hash
     include Party::Proxy
