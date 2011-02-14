@@ -69,26 +69,62 @@ module Party
           instance_eval %{
           class << self
             define_method :#{meth}= do |arg|
-              self.#{obj} ||= proxy_factory[:#{obj}].create if !#{obj} && proxy_factory
+              self.#{obj} ||= create_in_factory(:#{obj})
+              self.#{obj} ||= self.class.send(:create_in_factory, :#{obj})
               #{obj}.send(:#{meth}=, arg) if #{obj}
             end
           end
           }
         end
       end 
-      
+
       def named_proxies hash
         raise ArgumentError, "Argument must be a hash" if !hash.kind_of? Hash
         self.class.send :include, Party::Proxy
         hash.each_pair do |proxy, methods|
           proxy_accessors_for proxy, methods
         end
-      end                   
+      end
+      
+      protected
+      
+      def create_in_factory name
+        raise ArgumentError, "Factory name must be a label, was #{name}" if !name.kind_of_label? 
+        proxy_factory[name].create if !send(name) && proxy_factory && proxy_factory[name]
+      end      
     end
 
     # Define class methods here.
     module ClassMethods
       attr_accessor :proxies
+      attr_accessor :proxy_factories
+
+      def proxy_factory
+        proxy_factories
+      end
+
+      def remove_proxy_factory name
+        @proxy_factories[name] = nil
+      end
+
+      def remove_proxy_factories
+        self.proxy_factories = nil
+      end
+
+      def add_proxy_factories hash
+        hash.each_pair do |name, factory| 
+          factory = if factory.kind_of?(Class) 
+            Party::Proxy::Factory.new(factory) 
+          else
+            raise ArgumentError, "Factory must be a Class or have a #create method: #{factory}" if !factory.respond_to? create
+            factory
+          end
+          self.proxy_factories ||= {}
+          self.proxy_factories.merge!(name.to_sym => factory) if name.kind_of_label? 
+        end
+      end
+      alias_method :add_proxy_factory, :add_proxy_factories
+
 
       def remove_proxy name
         proxies.delete(name)
@@ -107,10 +143,18 @@ module Party
         proxy_for obj, methods
         methods.flat_uniq.each do |meth|
           name = meth.to_sym
+          obj_name = obj.to_sym
           define_method name do |arg|
-            obj.send("#{name}=", arg) if send(obj)
+            send(obj_name).send('||=', create_in_factory(obj_name))
+            send(obj_name).send("#{name}=", arg) if send(obj)
           end
         end
+      end
+
+      protected
+      
+      def create_in_factory name
+        proxy_factory[name].create if proxy_factory && proxy_factory[name]
       end
     end
 

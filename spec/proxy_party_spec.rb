@@ -58,7 +58,7 @@ describe Party::Proxy do
     it "Should add party proxy to Module" do
       PartyModule.methods.grep(/proxy_for/).should_not be_empty
     end
-
+  
     it "Should add party proxy to Class" do
       PartyClass.methods.grep(/proxy_for/).should_not be_empty
     end
@@ -70,24 +70,24 @@ describe Party::Proxy do
       subject.name.should == 'kristian'
     end
   end
-
+  
   describe '#proxy_for' do
     it "proxies speak_it! on mic" do
       subject = Party::Subject.new 'kristian'
       subject.mic = Mic.new 'hello'
       Party::Subject.proxy_for :mic, :speak_it! 
-
+  
       subject.proxy_for :mic, :speak_it!
       
       subject.speak_it!.should == 'hello'
     end
-
+  
     it "handles proxy when the proxied object (mic) is nil" do
       subject = Party::Subject.new 'kristian'
       subject.proxy_for :mic, :speak_it!
       subject.speak_it!.should == nil
     end
-
+  
     it "handles proxy when the proxied object (mic) is set to nil later" do
       subject = Party::Subject.new 'kristian'
       subject.mic = Mic.new 'hello'
@@ -95,7 +95,7 @@ describe Party::Proxy do
       subject.mic = nil      
       subject.speak_it!.should == nil
     end
-
+  
     it "errors when proxy when the proxied object (mic) is nil and nil check is on" do
       subject = Party::Subject.new 'kristian'
       subject.mic = nil
@@ -103,14 +103,25 @@ describe Party::Proxy do
     end
   end
 
+  describe 'Class methods' do
+    it "proxies uses class level proxy factory" do
+      subject = Party::Subject.new 'kristian'
+      Party::Subject.add_proxy_factory :mic => Mic 
+      subject.proxy_accessors_for :mic, :speak
+      subject.speak = 'do it!' 
+      subject.speak.should == 'do it!'
+    end 
+  end    
+
   describe '#proxy_accessor_for' do  
     it "proxies speak accessor methods on mic bu can't set accessor since proxy not initialized and no proxy factory defined" do
       subject = Party::Subject.new 'kristian'
+      Party::Subject.remove_proxy_factories
       subject.proxy_accessors_for :mic, :speak
       subject.speak = 'do it!'
       subject.speak.should == nil
     end
-
+  
     it "proxies speak accessor methods on mic and uses factory to create proxy obj if nil on setting value" do
       subject = Party::Subject.new 'kristian'
       subject.add_proxy_factory :mic => Mic 
@@ -119,7 +130,7 @@ describe Party::Proxy do
       subject.speak.should == 'do it!'
     end 
   end
-
+  
   describe '#named_proxies' do  
     it "proxies select :mic and :state methods" do
       subject = Party::Subject.new 'kristian'
@@ -127,7 +138,7 @@ describe Party::Proxy do
       subject.named_proxies :mic => :speak, :state => :name
       subject.speak = 'do it!'
       subject.speak.should == 'do it!'
-
+  
       subject.name = 'kris'
       subject.name.should == 'kris'
     end 
