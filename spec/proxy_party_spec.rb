@@ -61,6 +61,26 @@ describe Party::Proxy do
       
       subject.speak_it!.should == 'hello'
     end
+
+    it "handles proxy when the proxied object (mic) is nil" do
+      subject = Party::Subject.new 'kristian'
+      subject.proxy_for :mic, :speak_it!
+      subject.speak_it!.should == nil
+    end
+
+    it "handles proxy when the proxied object (mic) is set to nil later" do
+      subject = Party::Subject.new 'kristian'
+      subject.mic = Mic.new 'hello'
+      subject.proxy_for :mic, :speak_it!, :check => true
+      subject.mic = nil      
+      subject.speak_it!.should == nil
+    end
+
+    it "errors when proxy when the proxied object (mic) is nil and nil check is on" do
+      subject = Party::Subject.new 'kristian'
+      subject.mic = nil
+      lambda {subject.proxy_for :mic, :speak_it!, :check => true}.should raise_error
+    end
   end
 
   describe '#proxy_accessor_for' do  

@@ -1,5 +1,6 @@
 require 'sugar-high/array'
 require 'sugar-high/kind_of'
+require 'sugar-high/arguments'
 
 module Party
   module Proxy  
@@ -11,13 +12,16 @@ module Party
 
     module InstanceMethods
       def proxy_for obj, *methods
-        methods.flat_uniq.each do |meth|       
-          raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
-          raise ArgumentError, "No such method to proxy for #{obj}" if !self.send(obj).respond_to?(meth)
+        check = last_arg_value({:check => false}, methods)
+        methods.to_symbols.flat_uniq.each do |meth|       
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method to proxy for #{obj}" if !self.send(obj).respond_to?(meth)
+          end
           instance_eval %{
           class << self
             define_method :#{meth} do
-              #{obj}.send :#{meth}
+              #{obj}.send(:#{meth}) if #{obj}
             end
           end
           }
@@ -26,13 +30,16 @@ module Party
       
       def proxy_accessors_for obj, *methods
         proxy_for obj, methods
-        methods.flat_uniq.each do |meth|
-          raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
-          raise ArgumentError, "No such method #{meth} to proxy for #{obj}" if !self.send(obj).respond_to?(:"#{meth}=")
+        check = last_arg_value({:check => false}, methods)
+        methods.to_symbols.flat_uniq.each do |meth|
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method #{meth} to proxy for #{obj}" if !self.send(obj).respond_to?(:"#{meth}=")
+          end
           instance_eval %{
           class << self
             define_method :#{meth}= do |arg|
-              #{obj}.send :#{meth}=, arg
+              #{obj}.send(:#{meth}=, arg) if #{obj}
             end
           end
           }
@@ -60,7 +67,7 @@ module Party
         methods.flat_uniq.each do |meth|
           name = meth.to_sym
           define_method name do
-            send(obj).send name
+            send(obj).send(name) if send(obj)
           end
         end
       end
@@ -70,7 +77,7 @@ module Party
         methods.flat_uniq.each do |meth|
           name = meth.to_sym
           define_method name do |arg|
-            obj.send "#{name}=", arg
+            obj.send("#{name}=", arg) if send(obj)
           end
         end
       end
@@ -80,7 +87,7 @@ module Party
     def method_missing(name, *args, &block) 
       self.class.proxies.each do |proxi|
         proxy_obj = self.send proxi
-        return proxy_obj.send name, *args, &block if proxy_obj.respond_to? :"#{name}"
+        return proxy_obj.send(name, *args, &block) if proxy_obj.respond_to? :"#{name}"
       end
       super
     end      
