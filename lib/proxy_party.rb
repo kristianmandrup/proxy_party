@@ -5,13 +5,15 @@ require 'sugar-high/arguments'
 module Party
   module Proxy
     class Factory
+      attr_reader :create_method, :klass
       
-      def initialize klass
+      def initialize klass, create_method = nil
         @klass = klass
+        @create_method = create_method
       end
       
       def create
-        @klass.new
+        create_method ? klass.send(create_method) : klass.new
       end
     end
 
@@ -32,8 +34,17 @@ module Party
           factory = if factory.kind_of?(Class) 
             Party::Proxy::Factory.new(factory) 
           else
-            raise ArgumentError, "Factory must be a Class or have a #create method: #{factory}" if !factory.respond_to? create
-            factory
+            case factory
+            when Array
+              fac = factory.first
+              meth = factory.last if factory.size == 2
+              raise ArgumentError, "Factory must be a Class, was #{fac}" if !fac.kind_of?(Class) 
+              raise ArgumentError, "Factory method be a label, was #{meth}" if meth && !meth.kind_of_label?
+              Party::Proxy::Factory.new(fac, meth)
+            else
+              raise ArgumentError, "Factory must be a Class or have a #create method: #{factory}" if !factory.respond_to?(:create)
+              factory
+            end
           end
           self.proxy_factories ||= {}
           self.proxy_factories.merge!(name.to_sym => factory) if name.kind_of_label? 
@@ -116,8 +127,17 @@ module Party
           factory = if factory.kind_of?(Class) 
             Party::Proxy::Factory.new(factory) 
           else
-            raise ArgumentError, "Factory must be a Class or have a #create method: #{factory}" if !factory.respond_to? create
-            factory
+            case factory
+            when Array
+              fac = factory.first
+              meth = factory.last if factory.size == 2
+              raise ArgumentError, "Factory must be a Class, was #{fac}" if !fac.kind_of?(Class) 
+              raise ArgumentError, "Factory method be a label, was #{meth}" if meth && !meth.kind_of_label?
+              Party::Proxy::Factory.new(fac, meth)
+            else
+              raise ArgumentError, "Factory must be a Class or have a #create method: #{factory}" if !factory.respond_to?(:create)
+              factory
+            end
           end
           self.proxy_factories ||= {}
           self.proxy_factories.merge!(name.to_sym => factory) if name.kind_of_label? 
