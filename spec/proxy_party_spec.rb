@@ -48,7 +48,7 @@ module PartyModule
 end
 
 class PartyClass
-  party_proxy
+  proxy_party
 end
 
 

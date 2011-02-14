@@ -129,6 +129,7 @@ class Module
   def party_proxy
     include Party::Proxy    
   end
+  alias_method :proxy_party, :party_proxy
   
   def named_proxies hash
     raise ArgumentError, "Argument must be a hash" if !hash.kind_of? Hash
