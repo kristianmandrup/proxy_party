@@ -3,7 +3,7 @@ require 'spec_helper'
 class State
   attr_accessor :name
   
-  def initialize(name)
+  def initialize name = nil
     @name = name    
   end  
 end  
@@ -11,7 +11,7 @@ end
 class Info
   attr_accessor :text
   
-  def initialize(text)
+  def initialize text = nil
     @text = text    
   end  
 end  
@@ -19,7 +19,7 @@ end
 class Mic
   attr_accessor :speak
   
-  def initialize(text)
+  def initialize text = nil
     @speak = text    
   end  
   
@@ -36,7 +36,7 @@ module Party
     
     proxy :state, :info
     
-    def initialize(name)
+    def initialize name = nil
       @state = State.new name
       @info = Info.new 'hello'      
     end
@@ -84,11 +84,18 @@ describe Party::Proxy do
   end
 
   describe '#proxy_accessor_for' do  
-    it "proxies speak accessor methods on mic" do
+    it "proxies speak accessor methods on mic bu can't set accessor since proxy not initialized and no proxy factory defined" do
       subject = Party::Subject.new 'kristian'
-      subject.mic = Mic.new 'hello'
       subject.proxy_accessors_for :mic, :speak
       subject.speak = 'do it!'
+      subject.speak.should == nil
+    end
+
+    it "proxies speak accessor methods on mic and uses factory to create proxy obj if nil on setting value" do
+      subject = Party::Subject.new 'kristian'
+      subject.add_proxy_factory :mic => Mic 
+      subject.proxy_accessors_for :mic, :speak
+      subject.speak = 'do it!' 
       subject.speak.should == 'do it!'
     end 
   end

@@ -5,12 +5,43 @@ require 'sugar-high/arguments'
 module Party
   module Proxy  
 
+    class Factory
+      
+      def initialize klass
+        @klass = klass
+      end
+      
+      def create
+        @klass.new
+      end
+    end
+
     def self.included(base)
       base.extend ClassMethods
       base.send :include, InstanceMethods
     end
 
     module InstanceMethods
+      attr_accessor :proxy_factories
+
+      def proxy_factory
+        proxy_factories
+      end
+
+      def add_proxy_factories hash
+        hash.each_pair do |name, factory| 
+          factory = if factory.kind_of?(Class) 
+            Party::Proxy::Factory.new(factory) 
+          else
+            raise ArgumentError, "Factory must be a Class or have a #create method: #{factory}" if !factory.respond_to? create
+            factory
+          end
+          self.proxy_factories ||= {}
+          self.proxy_factories.merge!(name.to_sym => factory) if name.kind_of_label? 
+        end
+      end
+      alias_method :add_proxy_factory, :add_proxy_factories
+      
       def proxy_for obj, *methods
         check = last_arg_value({:check => false}, methods)
         methods.to_symbols.flat_uniq.each do |meth|       
@@ -39,6 +70,7 @@ module Party
           instance_eval %{
           class << self
             define_method :#{meth}= do |arg|
+              self.#{obj} ||= proxy_factory[:#{obj}].create if !#{obj} && proxy_factory
               #{obj}.send(:#{meth}=, arg) if #{obj}
             end
           end
