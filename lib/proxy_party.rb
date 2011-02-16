@@ -51,8 +51,44 @@ module Party
         end
       end
       alias_method :add_proxy_factory, :add_proxy_factories
-      
+
+      # Add instance proxy methods      
       def proxy_for obj, *methods
+        check = last_arg_value({:check => false}, methods)
+        methods.to_symbols.flat_uniq.each do |meth|       
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method to proxy for #{obj}" if !self.send(obj).respond_to?(meth)
+          end
+          class_eval %{
+            define_method :#{meth} do
+              #{obj}.send(:#{meth}) if #{obj}
+            end
+          }
+        end
+      end
+
+      # Add instance proxy methods
+      def proxy_accessors_for obj, *methods
+        proxy_for obj, methods
+        check = last_arg_value({:check => false}, methods)
+        methods.to_symbols.flat_uniq.each do |meth|
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method #{meth} to proxy for #{obj}" if !self.send(obj).respond_to?(:"#{meth}=")
+          end
+          class_eval %{
+            define_method :#{meth}= do |arg|
+              self.#{obj} ||= create_in_factory(:#{obj})
+              self.#{obj} ||= self.class.send(:create_in_factory, :#{obj})
+              #{obj}.send(:#{meth}=, arg) if #{obj}
+            end
+          }
+        end
+      end 
+
+      # Add proxy methods only to the instance object
+      def instance_proxy_for obj, *methods
         check = last_arg_value({:check => false}, methods)
         methods.to_symbols.flat_uniq.each do |meth|       
           if check
@@ -68,9 +104,10 @@ module Party
           }
         end
       end
-      
-      def proxy_accessors_for obj, *methods
-        proxy_for obj, methods
+
+      # Add proxy methods only to the instance object      
+      def instance_proxy_accessors_for obj, *methods
+        instance_proxy_for obj, methods
         check = last_arg_value({:check => false}, methods)
         methods.to_symbols.flat_uniq.each do |meth|
           if check
@@ -93,7 +130,7 @@ module Party
         raise ArgumentError, "Argument must be a hash" if !hash.kind_of? Hash
         self.class.send :include, Party::Proxy
         hash.each_pair do |proxy, methods|
-          proxy_accessors_for proxy, methods
+          instance_proxy_accessors_for proxy, methods
         end
       end
       
@@ -180,6 +217,7 @@ module Party
 
     # proxy to state
     def method_missing(name, *args, &block) 
+      return if !self.class.proxies
       self.class.proxies.each do |proxi|
         proxy_obj = self.send proxi
         return proxy_obj.send(name, *args, &block) if proxy_obj.respond_to? :"#{name}"
