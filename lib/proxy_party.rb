@@ -54,14 +54,29 @@ module Party
 
       # Add instance proxy methods      
       def proxy_for obj, *methods
-        check = last_arg_value({:check => false}, methods)
-        methods.to_symbols.flat_uniq.each do |meth|       
+        check   = last_arg_value({:check => false}, methods)
+        rename_methods = last_arg_value({:rename => {}}, methods)
+        methods.delete(:rename) if rename_methods
+
+        methods.to_symbols.flat_uniq.each do |meth|
           if check
             raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
             raise ArgumentError, "No such method to proxy for #{obj}" if !self.send(obj).respond_to?(meth)
           end
           class_eval %{
             define_method :#{meth} do
+              #{obj}.send(:#{meth}) if #{obj}
+            end
+          }
+        end
+        
+        rename_methods.each_pair do |meth, new_meth|
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method to proxy for #{obj}" if !self.send(obj).respond_to?(meth)
+          end
+          class_eval %{
+            define_method :#{new_meth} do
               #{obj}.send(:#{meth}) if #{obj}
             end
           }
@@ -72,6 +87,9 @@ module Party
       def proxy_accessors_for obj, *methods
         proxy_for obj, methods
         check = last_arg_value({:check => false}, methods)
+        rename_methods = last_arg_value({:rename => {}}, methods)
+        methods.delete(:rename) if rename_methods
+
         methods.to_symbols.flat_uniq.each do |meth|
           if check
             raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
@@ -85,11 +103,28 @@ module Party
             end
           }
         end
+
+        rename_methods.each_pair do |meth, new_meth|
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method #{meth} to proxy for #{obj}" if !self.send(obj).respond_to?(:"#{meth}=")
+          end
+          class_eval %{
+            define_method :#{new_meth}= do |arg|
+              self.#{obj} ||= create_in_factory(:#{obj})
+              self.#{obj} ||= self.class.send(:create_in_factory, :#{obj})
+              #{obj}.send(:#{meth}=, arg) if #{obj}
+            end
+          }
+        end
       end 
 
       # Add proxy methods only to the instance object
       def instance_proxy_for obj, *methods
-        check = last_arg_value({:check => false}, methods)
+        check = last_arg_value({:check => false}, methods) 
+        rename_methods = last_arg_value({:rename => {}}, methods)
+        methods.delete(:rename) if rename_methods
+        
         methods.to_symbols.flat_uniq.each do |meth|       
           if check
             raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
@@ -102,13 +137,31 @@ module Party
             end
           end
           }
-        end
+        end 
+        
+        rename_methods.each_pair do |meth, new_meth|
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method to proxy for #{obj}" if !self.send(obj).respond_to?(meth)
+          end
+          instance_eval %{
+          class << self
+            define_method :#{new_meth} do
+              #{obj}.send(:#{meth}) if #{obj}
+            end
+          end
+          }
+        end        
       end
 
       # Add proxy methods only to the instance object      
       def instance_proxy_accessors_for obj, *methods
         instance_proxy_for obj, methods
         check = last_arg_value({:check => false}, methods)
+
+        rename_methods = last_arg_value({:rename => {}}, methods)
+        methods.delete(:rename) if rename_methods
+        
         methods.to_symbols.flat_uniq.each do |meth|
           if check
             raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
@@ -122,6 +175,22 @@ module Party
               #{obj}.send(:#{meth}=, arg) if #{obj}
             end
           end
+          }
+        end 
+
+        rename_methods.each_pair do |meth, new_meth|
+          if check
+            raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
+            raise ArgumentError, "No such method to proxy for #{obj}" if !self.send(obj).respond_to?(meth)
+          end
+          instance_eval %{
+            class << self
+              define_method :#{new_meth}= do |arg|
+                self.#{obj} ||= create_in_factory(:#{obj})
+                self.#{obj} ||= self.class.send(:create_in_factory, :#{obj})
+                #{obj}.send(:#{meth}=, arg) if #{obj}
+              end
+            end
           }
         end
       end 
@@ -188,9 +257,19 @@ module Party
       end
       
       def proxy_for obj, *methods
+        rename_methods = last_arg_value({:rename => {}}, methods)
+        methods.delete(:rename) if rename_methods
+        
         methods.flat_uniq.each do |meth|
           name = meth.to_sym
           define_method name do
+            send(obj).send(name) if send(obj)
+          end
+        end
+
+        rename_methods.each_pair do |meth, new_meth|
+          name = meth.to_sym
+          define_method new_meth.to_sym do
             send(obj).send(name) if send(obj)
           end
         end
@@ -198,10 +277,23 @@ module Party
 
       def proxy_accessors_for obj, *methods
         proxy_for obj, methods
+        
+        rename_methods = last_arg_value({:rename => {}}, methods)
+        methods.delete(:rename) if rename_methods
+        
         methods.flat_uniq.each do |meth|
           name = meth.to_sym
           obj_name = obj.to_sym
           define_method name do |arg|
+            send(obj_name).send('||=', create_in_factory(obj_name))
+            send(obj_name).send("#{name}=", arg) if send(obj)
+          end
+        end
+
+        rename_methods.each_pair do |meth, new_meth|
+          name = meth.to_sym
+          obj_name = obj.to_sym
+          define_method new_meth.to_sym do |arg|
             send(obj_name).send('||=', create_in_factory(obj_name))
             send(obj_name).send("#{name}=", arg) if send(obj)
           end

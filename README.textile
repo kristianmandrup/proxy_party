@@ -11,6 +11,14 @@ h2. Use
 
 @require 'party_proxy'@
 
+h2. Latest news
+
+Now supports renaming of proxy method so you can avoid method name collisions!
+
+h2. TODO
+
+Major DRYing up needed. Currently a lot of code duplication :O
+
 h2. Usage
 
 <pre>
@@ -63,6 +71,13 @@ h2. Usage
 
         subject.speak_it!.should == 'hello'
       end
+
+      it "proxies speak_it! as speak_up! on mic" do
+        subject = Party::Subject.new 'kristian'
+        subject.mic = Mic.new 'hello'
+        Party::Subject.proxy_for :mic, :rename => {:speak_it! => :speak_up!}
+        subject.speak_up!.should == 'hello'
+      end
     end
 
     describe '#proxy_accessor_for' do  
@@ -72,6 +87,14 @@ h2. Usage
         subject.proxy_accessors_for :mic, :speak
         subject.speak = 'do it!'
         subject.speak.should == 'do it!'
+      end 
+
+      it "proxies speak accessor method on mic as yell" do
+        subject = Party::Subject.new 'kristian'
+        subject.mic = Mic.new 'hello'
+        subject.proxy_accessors_for :mic, :rename => {:speak => :yell}
+        subject.yell = 'do it!'
+        subject.yell.should == 'do it!'
       end 
     end
 

@@ -8,15 +8,8 @@ class Address
   attr_accessor :street
 end
 
-module Proxies      
-  # def self.included(base)
-  #   base.class_eval do
-  #     make_proxy_for :address, :street
-  #   end
-  # end
-
+module Proxies
   proxy_accessors_for :address, :street
-  # make_proxy_accessors_for :address, :street  
 end
 
 class Place
@@ -24,10 +17,11 @@ class Place
   # include Proxies
   
   def self.inherited(base)    
-    puts "Inherited: #{base}"
-    base.class_eval do      
-      send :include, Proxies
-    end
+    # Alternative
+    # base.class_eval do      
+    #   send :include, Proxies
+    # end
+    base.send :include, Proxies
     # puts base.methods.sort
   end  
 end

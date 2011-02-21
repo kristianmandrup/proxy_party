@@ -115,6 +115,24 @@ describe Party::Proxy do
       subject.yawn.should == 'miau'
     end
   end
+
+  describe '#proxy_for renaming using :as' do
+    it "proxies speak_it! on mic" do
+      subject = Party::Subject.new 'kristian'
+      subject.mic = Mic.new 'hello'
+      subject.instance_proxy_for :mic, :rename => {:speak_it! => :speak_up!}
+      subject.speak_up!.should == 'hello'
+    end
+    
+    it "proxies uses class level proxy factory with factory method" do
+      subject = Party::Subject.new 'kristian'
+      subject.add_proxy_factory :mic => [Mic, :create_empty]
+      subject.instance_proxy_accessors_for :mic, :rename => {:speak => :yell, :yawn => :gaab}
+      subject.yell = 'blip'
+      subject.yell.should == 'blip'
+      subject.gaab.should == 'miau'
+    end    
+  end
   
   describe '#named_proxies' do
     it "proxies select :mic and :state methods" do
