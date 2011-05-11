@@ -84,7 +84,14 @@ h2. Usage
       it "proxies speak accessor methods on mic" do
         subject = Party::Subject.new 'kristian'
         subject.mic = Mic.new 'hello'
-        subject.proxy_accessors_for :mic, :speak
+
+        # multi
+        subject.proxy_accessors_for :mic, :speak, :miau
+
+        # single
+        subject.proxy_accessor_for :mic, :speak
+        subject.proxy_accessor_for :mic => :speak
+
         subject.speak = 'do it!'
         subject.speak.should == 'do it!'
       end 

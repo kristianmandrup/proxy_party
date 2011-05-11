@@ -104,6 +104,12 @@ module Party
           }
         end
 
+        def proxy_accessor_for obj, method = nil
+          method ||= obj[1] if obj.kind_of?(Hash)
+          raise ArgumentError, "Takes only a single accessor to proxy" if method.kind_of? Array
+          proxy_accessor_for obj, [method].flatten
+        end
+
         rename_methods.each_pair do |meth, new_meth|
           if check
             raise ArgumentError, "No such object to proxy #{obj}" if !self.respond_to?(obj)
@@ -194,6 +200,12 @@ module Party
           }
         end
       end 
+
+      def instance_proxy_accessor_for obj, method = nil
+        method ||= obj[1] if obj.kind_of?(Hash)
+        raise ArgumentError, "Takes only a single accessor to proxy" if method.kind_of? Array
+        instance_proxy_accessors_for obj, [method].flatten
+      end
 
       def named_proxies hash
         raise ArgumentError, "Argument must be a hash" if !hash.kind_of? Hash
@@ -298,6 +310,12 @@ module Party
             send(obj_name).send("#{name}=", arg) if send(obj)
           end
         end
+      end
+
+      def proxy_accessor_for obj, method = nil
+        method ||= obj[1] if obj.kind_of?(Hash)
+        raise ArgumentError, "Takes only a single accessor to proxy" if method.kind_of? Array
+        proxy_accessors_for obj, [method].flatten
       end
 
       protected

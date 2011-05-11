@@ -109,7 +109,9 @@ describe Party::Proxy do
     it "proxies uses class level proxy factory with factory method" do
       subject = Party::Subject.new 'kristian'
       subject.add_proxy_factory :mic => [Mic, :create_empty]
-      subject.instance_proxy_accessors_for :mic, :speak, :yawn
+      subject.instance_proxy_accessors_for :mic, :speak
+      subject.instance_proxy_accessor_for :mic, :yawn
+      subject.instance_proxy_accessor_for :mic => :yawn
       subject.speak = 'blip'
       subject.speak.should == 'blip'
       subject.yawn.should == 'miau'
