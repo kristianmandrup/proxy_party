@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{proxy_party}
-  s.version = "0.2.1"
+  s.version = "0.2.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Kristian Mandrup"]
-  s.date = %q{2011-02-21}
+  s.authors = [%q{Kristian Mandrup}]
+  s.date = %q{2011-05-11}
   s.description = %q{Method missing proxy pattern}
   s.email = %q{kmandrup@gmail.com}
   s.extra_rdoc_files = [
@@ -30,8 +30,8 @@ Gem::Specification.new do |s|
     "spec/spec_helper.rb"
   ]
   s.homepage = %q{http://github.com/kristianmandrup/proxy_party}
-  s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.5.2}
+  s.require_paths = [%q{lib}]
+  s.rubygems_version = %q{1.8.0}
   s.summary = %q{Add proxy functionality the fun way}
   s.test_files = [
     "spec/proxy_party_complex_spec.rb",
